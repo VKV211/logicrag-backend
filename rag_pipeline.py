@@ -14,18 +14,27 @@ INDEX_DIR = os.path.join(UPLOAD_DIR, "faiss_index")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-_embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+_embeddings = None  # loaded lazily, on first actual use (not at import time)
 
 _splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=150)
 
 _vector_store = None  # loaded lazily / built on first upload
 
 
+def get_embeddings():
+    """Lazily create the embeddings model. Avoids downloading/loading it at import time,
+    which can block app startup on Render."""
+    global _embeddings
+    if _embeddings is None:
+        _embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    return _embeddings
+
+
 def _load_existing_index():
     global _vector_store
     if _vector_store is None and os.path.exists(INDEX_DIR):
         _vector_store = FAISS.load_local(
-            INDEX_DIR, _embeddings, allow_dangerous_deserialization=True
+            INDEX_DIR, get_embeddings(), allow_dangerous_deserialization=True
         )
     return _vector_store
 
@@ -52,7 +61,7 @@ def process_and_index_pdf(file_path: str, filename: str):
     _load_existing_index()
 
     if _vector_store is None:
-        _vector_store = FAISS.from_documents(chunks, _embeddings)
+        _vector_store = FAISS.from_documents(chunks, get_embeddings())
     else:
         _vector_store.add_documents(chunks)
 
