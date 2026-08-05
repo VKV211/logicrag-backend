@@ -2,6 +2,8 @@ import logging
 import os
 import shutil
 
+print("Step 1")
+
 import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
@@ -18,14 +20,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("logicrag")
 
 load_dotenv()
+print("Step 2")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+print("Step 3")
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY not set. Add it to your .env file (or your Render environment variables).")
 
 genai.configure(api_key=GEMINI_API_KEY)
+print("Step 4")
 
 app = FastAPI(title="LogicRAG Backend")
+print("Step 5")
 
 # allow the Streamlit frontend (any origin) to call this API
 app.add_middleware(
