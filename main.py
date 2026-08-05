@@ -4,7 +4,7 @@ import shutil
 
 print("Step 1")
 
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,7 +27,7 @@ print("Step 3")
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY not set. Add it to your .env file (or your Render environment variables).")
 
-genai.configure(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY)
 print("Step 4")
 
 app = FastAPI(title="LogicRAG Backend")
@@ -136,8 +136,10 @@ async def ask_question(payload: AskRequest):
 
     # Step 4: call Gemini for the final answer
     try:
-        model = genai.GenerativeModel("gemini-3.6-flash")
-        response = model.generate_content(final_prompt)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=final_prompt,
+        )
         answer = response.text.strip()
     except Exception as e:
         logger.exception("Gemini generation failed")
